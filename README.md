@@ -1,8 +1,8 @@
 # sc-protocol-reference
 
-Websocket API for swarm city clients
+Reference implementation for the websocket-API for Swarm City clients
 
-Runs on helper-nodes , serving clients
+Runs on a global swarm of helper-nodes.
 
 ## Installing
 

@@ -1,0 +1,17 @@
+{
+  "name": "sc-socketapi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "test:watch": "mocha --watch ./test ./package.json ./handlers/*"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "should": "^13.1.0",
+    "socket.io": "^2.0.3",
+    "socket.io-client": "^2.0.3"
+  }
+}
