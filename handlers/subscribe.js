@@ -8,7 +8,7 @@ module.exports = function(socket) {
 			default:
 				//console.log('unknown channel', data.channel);
 				fn({
-					sucess: false,
+					success: false,
 					message: 'unknown channel'
 				});
 				break;
