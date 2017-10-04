@@ -6,6 +6,7 @@ var io = require('socket.io')();
 var socket_g;
 
 io.on('connect', (socket) => {
+	console.log('connected id=',socket.id);
 	require('./handlers/connected')(socket);
 	require('./handlers/subscribe')(socket);
 });

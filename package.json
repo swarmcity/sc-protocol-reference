@@ -10,6 +10,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "web3": "git://github.com/ethereum/web3.js.git#1.0",
     "should": "^13.1.0",
     "socket.io": "^2.0.3",
     "socket.io-client": "^2.0.3"
