@@ -4,15 +4,17 @@ module.exports = function(socket) {
 			case 'balance':
 				balanceSubscribeHandler(socket, data, fn);
 				break;
-				//case ''
 			default:
-				//console.log('unknown channel', data.channel);
 				fn({
-					success: false,
+					response: 400,
 					message: 'unknown channel'
 				});
 				break;
 		}
+	});
+
+	socket.on('unsubscribe', (data, fn) => {
+		unSubscribeHandler(socket, data, fn);
 	});
 };
 
@@ -22,16 +24,7 @@ const uuidv4 = require('uuid/v4');
 var p = new Web3.providers.WebsocketProvider('ws://localhost:8548');
 var web3 = new Web3(p);
 
-//var web3_old = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
-
 var minimeContract_abi = require('../contracts/MiniMeToken.json');
-
-// var subscription = web3.eth.subscribe('pendingTransactions', function(error, result) {
-// 	if (!error)
-// 		console.log(result);
-// 	else
-// 		console.log(error);
-// });
 
 var subscriptions = {};
 
@@ -63,7 +56,10 @@ function balanceSubscribeHandler(socket, data, fn) {
 
 		// create subscription
 		var subscriptionId = uuidv4();
-		subscriptions[subscriptionId] = {};
+		if (!subscriptions[socket.id]) {
+			subscriptions[socket.id] = {};
+		}
+		subscriptions[socket.id][subscriptionId] = {};
 
 		// send response
 		fn({
@@ -71,8 +67,23 @@ function balanceSubscribeHandler(socket, data, fn) {
 			subscriptionId: subscriptionId,
 			data: reply
 		});
-
-
 	});
-
 }
+
+
+function unSubscribeHandler(socket, data, fn) {
+
+	if (subscriptions[socket.id] && subscriptions[socket.id][data.subscriptionId]) {
+		// TODO : write unsubscribe handler.
+		// Now it just deletes the subscription object..
+		delete subscriptions[socket.id][data.subscriptionId];
+		fn({
+			response: 200
+		});
+	} else {
+		fn({
+			response: 400,
+			message: 'subscription not found'
+		});
+	}
+};
