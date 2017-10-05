@@ -1,6 +1,6 @@
 var io = require('socket.io-client');
-var server = require('./server');
-server.start(4000);
+// var server = require('./server');
+// server.start(4000);
 
 var socketURL = 'http://localhost:4000';
 
@@ -11,18 +11,26 @@ var options = {
 
 client = io.connect(socketURL, options);
 
-client.emit('subscribe', {
+var subscriptiondata = {
 	channel: 'balance',
 	args: {
 		pubkey: '0x7018d8f698bfa076e1bdc916e2c64caddc750944',
-		tokens: ['0xb9e7f8568e08d5659f5d29c4997173d84cdf2607', '0x0']
+		tokens: [
+			'0xb9e7f8568e08d5659f5d29c4997173d84cdf2607',
+			'0xd26114cd6EE289AccF82350c8d8487fedB8A0C07'
+		]
 	}
-}, (data) => {
-	console.log('subscribe returned data');
-	console.log(JSON.stringify(data,null,null,2));
+};
+
+console.log('subscription');
+console.log(JSON.stringify(subscriptiondata,null,2));
+
+client.emit('subscribe', subscriptiondata, (data) => {
+	console.log('subscription response');
+	console.log(JSON.stringify(data, null, 2));
 });
 
 client.on('balance', (data) => {
 	console.log('received "balance" event');
-	console.log(JSON.stringify(data,null,null,2));
+	console.log(JSON.stringify(data, null, 2));
 });

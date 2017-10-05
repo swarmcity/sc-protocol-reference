@@ -8,6 +8,13 @@ Runs on a global swarm of helper-nodes.
 
 ```npm install```
 
+## Examples
+
+### subscribe to a balance
+
+* [sample_balance.js](./sample_balance.js)
+
+
 ## Running tests
 
 ```npm run test```
