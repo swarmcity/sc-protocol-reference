@@ -29,16 +29,16 @@ client.emit('subscribe', subscriptiondata, (data) => {
 	console.log('subscription response');
 	console.log(JSON.stringify(data, null, 2));
 	// now we have the subscription , unsubscribe immediately
-	client.emit('unsubscribe', {
-		subscriptionId: data.subscriptionId
-	}, (data) => {
-		console.log('unsubscribe response');
-		console.log(JSON.stringify(data, null, 2));
-		client.close();
-	});
+	// client.emit('unsubscribe', {
+	// 	subscriptionId: data.subscriptionId
+	// }, (data) => {
+	// 	console.log('unsubscribe response');
+	// 	console.log(JSON.stringify(data, null, 2));
+	// 	client.close();
+	// });
 });
 
-// client.on('balance', (data) => {
-// 	console.log('received "balance" event');
-// 	console.log(JSON.stringify(data, null, 2));
-// });
+client.on('balance', (data) => {
+	console.log('received "balance" event');
+	console.log(JSON.stringify(data, null, 2));
+});
