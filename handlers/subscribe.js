@@ -14,7 +14,12 @@ module.exports = function(socket) {
 	});
 
 	socket.on('unsubscribe', (data, fn) => {
-		unSubscribeHandler(socket, data, fn);
+		unSubscribeHandler(socket, data.subscriptionId, fn);
+	});
+
+	socket.on('disconnect', (reason) => {
+		//		console.log('hangup from connection id=', socket.id, '(', reason, ')');
+		unSubscribeSocket(socket);
 	});
 };
 
@@ -34,14 +39,8 @@ function balanceSubscribeHandler(socket, data, fn) {
 
 	var promiseslist = [];
 	for (var i = 0; i < data.args.tokens.length; i++) {
-		var minimeContract = new web3.eth.Contract(minimeContract_abi.abi, data.args.tokens[i]);
 
-		promiseslist.push(Promise.all([
-			data.args.tokens[i],
-			minimeContract.methods.symbol().call(),
-			minimeContract.methods.name().call(),
-			minimeContract.methods.balanceOf(data.args.pubkey).call(),
-		]));
+		promiseslist.push(getPrice(data.args.pubkey, data.args.tokens[i]));
 	}
 
 
@@ -54,25 +53,26 @@ function balanceSubscribeHandler(socket, data, fn) {
 		var reply = r.reduce(function(response, val) {
 
 			// create subscription 
-			var s = web3.eth.subscribe('logs', {
-					address: val[0],
-					topics: [topic]
-				})
+			var s = web3.eth.subscribe('newBlockHeaders')
 				.on("data", function(transaction) {
 					console.log('received data from GETH', transaction);
-					// TODO : get transaction via transactionHash &
-					// read relevant fields ( pubkey ) - update balances
-					// & fire event for balance  
-					socket.emit('balance',
-						{
-							pubkey: data.args.pubkey,
-							tokenContractAddress: val[0],
-							tokenSymbol: val[1],
-							tokenName: val[2],
-							balance: 0
-						}
-					);
+
+					getPrice(data.args.pubkey, val[0]).then(
+						function(priceResponse) {
+							socket.emit('balance', {
+								pubkey: data.args.pubkey,
+								tokenContractAddress: priceResponse[0],
+								tokenSymbol: priceResponse[1],
+								tokenName: priceResponse[2],
+								balance: priceResponse[3]
+							});
+
+						},
+						function() {
+							console.log('rejected...');
+						});
 				});
+
 			console.log('subscribed to GETH event log on address ', val[0]);
 			web3subscriptions.push(s);
 
@@ -106,12 +106,34 @@ function balanceSubscribeHandler(socket, data, fn) {
 	});
 }
 
+function getPrice(pubkey, token) {
+	var minimeContract = new web3.eth.Contract(minimeContract_abi.abi, token);
 
-function unSubscribeHandler(socket, data, fn) {
+	return Promise.all([
+		token,
+		minimeContract.methods.symbol().call(),
+		minimeContract.methods.name().call(),
+		minimeContract.methods.balanceOf(pubkey).call(),
+	])
+}
 
-	if (subscriptions[socket.id] && subscriptions[socket.id][data.subscriptionId]) {
-		for (var i = 0; i < subscriptions[socket.id][data.subscriptionId].web3subscriptions.length; i++) {
-			var s = subscriptions[socket.id][data.subscriptionId].web3subscriptions[i];
+
+function unSubscribeSocket(socket) {
+
+	if (subscriptions[socket.id]) {
+		for (var p in subscriptions[socket.id]) {
+			if (subscriptions[socket.id].hasOwnProperty(p)) {
+				unSubscribeHandler(socket, p);
+			}
+		}
+	}
+}
+
+function unSubscribeHandler(socket, subscriptionId, fn) {
+
+	if (subscriptions[socket.id] && subscriptions[socket.id][subscriptionId]) {
+		for (var i = 0; i < subscriptions[socket.id][subscriptionId].web3subscriptions.length; i++) {
+			var s = subscriptions[socket.id][subscriptionId].web3subscriptions[i];
 			console.log('Unsubscribing from GETH event log id', s.id);
 			s.unsubscribe(function(error, success) {
 				if (success)
@@ -119,14 +141,18 @@ function unSubscribeHandler(socket, data, fn) {
 			});
 		}
 
-		delete subscriptions[socket.id][data.subscriptionId];
-		fn({
-			response: 200
-		});
+		delete subscriptions[socket.id][subscriptionId];
+		if (fn) {
+			fn({
+				response: 200
+			});
+		}
 	} else {
-		fn({
-			response: 400,
-			message: 'subscription not found'
-		});
+		if (fn) {
+			fn({
+				response: 400,
+				message: 'subscription not found'
+			});
+		}
 	}
 };
