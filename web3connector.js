@@ -12,8 +12,9 @@ module.exports = {
 		var web3 = new Web3(p);
 
 		var s = web3.eth.subscribe('newBlockHeaders')
-			.on("data", function(transaction) {
-				eventEmitter.emit('newBlockHeaders', transaction);
+			.on("data", function(blockdata) {
+				console.log('new block',blockdata.number);
+				eventEmitter.emit('newBlockHeaders', blockdata);
 			});
 	}
 

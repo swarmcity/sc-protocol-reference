@@ -48,7 +48,8 @@ module.exports = {
 	 */
 	removeTask: function(id) {
 		if (tasks[id]) {
-			delete task[id];
+			delete tasks[id];
+			console.log('Task deleted',id);
 		}
 	},
 
@@ -65,9 +66,11 @@ module.exports = {
 
 					var promise = new Promise(function(resolve, reject) {
 						tasks[p].isRunning = true;
-						tasks[p].task(tasks[p].data).then(function() {
+						tasks[p].task(tasks[p].data).then(function(result) {
 							tasks[p].last_run = Date.now();
 							tasks[p].isRunning = false;
+							tasks[p].lastresult = result;
+
 							resolve();
 						}, function() {
 							reject();

@@ -22,9 +22,8 @@ function start(port) {
 	scheduler.start(1000 * 3);
 
 	web3connector.events.on('newBlockHeaders', function(data) {
-		console.log('NEW BLOCK',data);
+		console.log('newBlockHeaders fired',data);
 		scheduler.triggerInterval('block').then(function() {
-
 		});
 	});
 

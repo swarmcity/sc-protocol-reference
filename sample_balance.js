@@ -36,7 +36,9 @@ client.emit('subscribe', subscriptiondata, (data) => {
 	// 	console.log(JSON.stringify(data, null, 2));
 	// 	client.close();
 	// });
+
 });
+
 
 client.on('balance', (data) => {
 	console.log('received "balance" event');

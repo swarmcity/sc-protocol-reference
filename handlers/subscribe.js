@@ -23,7 +23,6 @@ module.exports = function(socket, taskscheduler) {
 	});
 
 	socket.on('disconnect', (reason) => {
-		//		console.log('hangup from connection id=', socket.id, '(', reason, ')');
 		unSubscribeSocket(socket);
 	});
 };
@@ -45,48 +44,49 @@ function balanceSubscribeHandler(socket, data, fn) {
 
 	var promiseslist = [];
 	for (var i = 0; i < data.args.tokens.length; i++) {
-
 		promiseslist.push(getPrice(data.args.pubkey, data.args.tokens[i]));
 	}
 
-
-
-	var web3subscriptions = [];
+	var balancesubscriptions = [];
 	Promise.all(promiseslist).then(function(r) {
 
-		// subscribe to updates on this (pubkey,token) pair
-		var topic = web3.utils.sha3('Transfer(address,address,uint256)');
-
 		var reply = r.reduce(function(response, val) {
-
-			// create subscription 
-
 
 			taskScheduler.addTask('block', {
 				pubkey: data.args.pubkey,
 				tokenaddress: val[0],
-				socketid: socket.id
+				socketid: socket.id,
+				lastresponse: val[3]
 			}, function(data) {
-		
-				getPrice(data.pubkey, data.tokenaddress).then(
-					function(priceResponse) {
-						socket.emit('balance', {
-							pubkey: data.pubkey,
-							tokenContractAddress: priceResponse[0],
-							tokenSymbol: priceResponse[1],
-							tokenName: priceResponse[2],
-							balance: priceResponse[3]
-						});
 
-					},
-					function() {
-						console.log('rejected...');
-					});
-				return Promise.resolve();
+				var p = new Promise(function(resolve, reject) {
+					getPrice(data.pubkey, data.tokenaddress).then(
+						function(priceResponse) {
+							if (data.lastresponse !== priceResponse[3]) {
+								socket.emit('balance', {
+									pubkey: data.pubkey,
+									tokenContractAddress: priceResponse[0],
+									tokenSymbol: priceResponse[1],
+									tokenName: priceResponse[2],
+									balance: priceResponse[3]
+								});
+								data.lastresponse = priceResponse[3];
+							}else{
+								console.log('no price change');
+							}
+							resolve();
+
+						},
+						function() {
+							console.log('rejected...');
+							reject();
+						});
+				});
+				return p;
 
 			}).then(function(taskid) {
 				console.log('task added. Id = ', taskid);
-				web3subscriptions.push(taskid);
+				balancesubscriptions.push(taskid);
 			});
 
 			//console.log('subscribed to GETH event log on address ', val[0]);
@@ -109,7 +109,7 @@ function balanceSubscribeHandler(socket, data, fn) {
 			subscriptions[socket.id] = {};
 		}
 		subscriptions[socket.id][subscriptionId] = {
-			web3subscriptions: web3subscriptions
+			balancesubscriptions: balancesubscriptions
 		};
 
 		// send response
@@ -124,50 +124,42 @@ function balanceSubscribeHandler(socket, data, fn) {
 
 function getPrice(pubkey, token) {
 	var minimeContract = new web3.eth.Contract(minimeContract_abi.abi, token);
-
 	return Promise.all([
 		token,
 		minimeContract.methods.symbol().call(),
 		minimeContract.methods.name().call(),
 		minimeContract.methods.balanceOf(pubkey).call(),
-	])
+	]);
 }
 
-
 function unSubscribeSocket(socket) {
-
-	for (key in taskScheduler.tasks){
-		if (taskScheduler.tasks.hasOwnProperty(p) && taskScheduler.tasks[key].data.socketid === socket.id){
+	for (key in taskScheduler.tasks) {
+		if (taskScheduler.tasks.hasOwnProperty(key) && taskScheduler.tasks[key].data.socketid === socket.id) {
 			taskScheduler.removeTask(key);
 		}
 	}
-
 }
 
 function unSubscribeHandler(socket, subscriptionId, fn) {
 
-	// if (subscriptions[socket.id] && subscriptions[socket.id][subscriptionId]) {
-	// 	for (var i = 0; i < subscriptions[socket.id][subscriptionId].web3subscriptions.length; i++) {
-	// 		var s = subscriptions[socket.id][subscriptionId].web3subscriptions[i];
-	// 		console.log('Unsubscribing from GETH event log id', s.id);
-	// 		s.unsubscribe(function(error, success) {
-	// 			if (success)
-	// 				console.log('Successfully unsubscribed from GETH event log!');
-	// 		});
-	// 	}
+	if (subscriptions[socket.id] && subscriptions[socket.id][subscriptionId]) {
+		for (var i = 0; i < subscriptions[socket.id][subscriptionId].balancesubscriptions.length; i++) {
+			var s = subscriptions[socket.id][subscriptionId].balancesubscriptions[i];
+			taskScheduler.removeTask(s);
+		}
 
-	// 	delete subscriptions[socket.id][subscriptionId];
-	// 	if (fn) {
-	// 		fn({
-	// 			response: 200
-	// 		});
-	// 	}
-	// } else {
-	// 	if (fn) {
-	// 		fn({
-	// 			response: 400,
-	// 			message: 'subscription not found'
-	// 		});
-	// 	}
-	// }
+		delete subscriptions[socket.id][subscriptionId];
+		if (fn) {
+			fn({
+				response: 200
+			});
+		}
+	} else {
+		if (fn) {
+			fn({
+				response: 400,
+				message: 'subscription not found'
+			});
+		}
+	}
 };
