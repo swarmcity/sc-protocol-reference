@@ -1,8 +1,5 @@
 var io = require('socket.io')();
 
-//var c = require('./handlers/connected');
-//	var s = require('./handlers/subscribe');
-
 var socket_g;
 var handler_connected = require('./handlers/connected');
 var handler_subscribe = require('./handlers/subscribe')
@@ -17,6 +14,7 @@ io.on('connect', (socket) => {
 	});
 });
 
+var block_tasks = {};
 
 
 function start(port) {
