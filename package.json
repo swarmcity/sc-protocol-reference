@@ -10,6 +10,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "events": "^1.1.1",
     "mocha": "^4.0.1",
     "should": "^13.1.0",
     "socket.io": "^2.0.3",
