@@ -91,6 +91,30 @@ none
 ### Returns
 ```Promise``` that resolves when the task has been removed.
 
+## triggerInterval
+
+```
+scheduler.triggerInterval([category]);
+```
+
+Triggers all tasks of a category. This function will iterate through the scheduled task list, filter out the tasks that belong to the ```category``` and run their functions, providing ```data``` as it's argument. ```data``` can be modified by the function to store state or other data and will be used as argument in the next trigger.
+
+### Parameters
+
+- ```category``` - ```String``` : a string representing the group of tasks to trigger. 
+
+Note: A reserved category is ```timer``` which makes this task scheduled by interval. The ```timer``` category is triggered by the scheduler itself automatically.
+
+### Returns
+```Promise``` that resolves when the task has been removed.
+
+### example
+```
+scheduler.triggerInterval('block').then(function() {
+	// execute when all tasks completed.
+});
+```
+
 
 
 ## clear
