@@ -51,6 +51,7 @@ module.exports = {
 			delete tasks[id];
 			console.log('Task deleted',id);
 		}
+		return Promise.resolve(id);
 	},
 
 	/**
@@ -93,6 +94,7 @@ module.exports = {
 				delete tasks[p];
 			}
 		}
+		return Promise.resolve();
 	}
 
 };
