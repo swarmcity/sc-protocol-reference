@@ -1,3 +1,8 @@
+**OBSOLETE : please refer to https://github.com/swarmcity/SwarmCityAPI**
+
+
+---
+
 # sc-protocol-reference
 
 Reference implementation for the websocket-API for Swarm City clients
